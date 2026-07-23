@@ -148,12 +148,17 @@
       #controls { opacity: 0.90; }
     }
     @media (max-width: 600px) {
-      #hud { width: calc(100vw - 126px); padding: 9px 11px; }
-      #gameTitle { font-size: 11px; }
-      #score { font-size: 18px; }
-      #mission { display: none; }
-      .dialog { padding: 20px; }
-    }
+  #hud {
+    width: calc(100vw - 126px);
+    padding: 9px 11px;
+    opacity: 0.45;            /* ← これを追加（0.35～0.55 で調整） */
+    transition: opacity 0.2s; /* ふわっと変わる（お好みで） */
+  }
+  #gameTitle { font-size: 11px; }
+  #score { font-size: 18px; }
+  #mission { display: none; }
+  .dialog { padding: 20px; }
+}
   </style>
 <base target="_blank">
 </head>
