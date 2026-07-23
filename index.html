@@ -105,8 +105,11 @@
     }
     /* === 走行用の中央Wスライダー === */
     #trackControls {
-      display: flex; gap: 14px; align-items: center; justify-content: center;
+      display: flex; gap: 22px; align-items: center; justify-content: center;
       margin-bottom: 6px; pointer-events: auto;
+      background: rgba(180, 180, 180, 0.22);  /* 薄鼠色 */
+  border-radius: 14px;
+  padding: 8px 10px;
     }
     .trackBox {
       display: flex; flex-direction: column; align-items: center;
@@ -909,6 +912,9 @@
 
       const leftTrackSlider = document.getElementById("leftTrackSlider");
       const rightTrackSlider = document.getElementById("rightTrackSlider");
+      document.getElementById('trackControls').addEventListener('pointerdown', (e) => {
+  e.stopPropagation();
+});
       
       function getTrackInputs() {
         let tL = 0.0;
