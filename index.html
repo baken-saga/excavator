@@ -12,7 +12,7 @@
           y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
       })(window,document,"clarity","script","xqsrmilorh");
   </script>
-  <style>
+<style>
     :root {
       color-scheme: dark;
       --yellow: #f6b800;
@@ -103,7 +103,6 @@
       color: rgba(255, 255, 255, 0.72); font-size: 9px; line-height: 1.15;
       text-align: center; pointer-events: none; transform: translate(-50%, -50%);
     }
-    /* === 走行用の中央Wスライダー === */
     #trackControls {
       display: flex; gap: 14px; align-items: center; justify-content: center;
       margin-bottom: 6px; pointer-events: auto;
@@ -147,20 +146,52 @@
     @media (pointer: fine) and (min-width: 900px) {
       #controls { opacity: 0.90; }
     }
-    /* スマホ用：HUD透過 */
-    @media (max-width: 900px) {
-  #hud {
-    width: calc(100vw - 126px);
-    padding: 9px 11px;
-    opacity: 0.45;
-    transition: opacity 0.2s;
-  }
-  #gameTitle { font-size: 11px; }
-  #score { font-size: 18px; }
-  #mission { display: none; }
-  .dialog { padding: 20px; }
-}
-                       
+
+    /* ── スマホ・タブレット用の調整 ── */
+    @media (max-width: 900px), (hover: none) and (pointer: coarse) {
+      #hud {
+        width: calc(100vw - 126px);
+        padding: 9px 11px;
+        opacity: 0.45;
+        transition: opacity 0.2s;
+      }
+      #gameTitle { font-size: 11px; }
+      #score { font-size: 18px; }
+      #mission { display: none; }
+      .dialog { padding: 20px; }
+
+      #trackControls .trackBox {
+        display: none;
+      }
+      .mobile-track-joystick {
+        display: block;
+      }
+    }
+
+    /* 丸ジョイスティックの基本スタイル（PCでは非表示） */
+    .mobile-track-joystick {
+      display: none;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.5);
+      border: 2px solid rgba(255,255,255,0.3);
+      position: relative;
+      touch-action: none;
+      pointer-events: auto;
+      margin: 0 auto;
+    }
+    .mobile-track-joystick .mobile-track-knob {
+      width: 45%;
+      height: 45%;
+      background: radial-gradient(circle at 35% 30%, #ffd95c, #d88c00);
+      border-radius: 50%;
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+      border: 2px solid rgba(255,255,255,0.4);
+    }
   </style>
 <base target="_blank">
 </head>
@@ -936,7 +967,7 @@ if (mobileTrackJoystick) {
     const centerY = rect.top + rect.height / 2;
     let dx = clientX - centerX;
     let dy = clientY - centerY;
-    const distance = Math.hypot(dx, dy);
+    const distance = Math.sqrt(dx * dx + dy * dy);
     const maxRadius = joystickRadius * 0.7;
 
     if (distance > maxRadius) {
@@ -1074,11 +1105,6 @@ if (mobileTrackJoystick) {
             setTerrainHeightAt(pR_outer.x, pR_outer.z, 0.008 * delta);
           }
           terrainUpdateFlag = true;
-        }
-
-        if (!keyboard.ArrowUp && !keyboard.ArrowDown && !keyboard.ArrowLeft && !keyboard.ArrowRight) {
-          leftTrackSlider.value = approach(parseFloat(leftTrackSlider.value), 0.0, delta * 3.5);
-          rightTrackSlider.value = approach(parseFloat(rightTrackSlider.value), 0.0, delta * 3.5);
         }
 
         let resistance = 0.0;
