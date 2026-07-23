@@ -119,6 +119,16 @@
       cursor: ns-resize; outline: none; background: rgba(0,0,0,0.5);
       border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;
     }
+    /* スライダーのつまみを大きくして操作しやすく */
+    .trackBox input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: #f6b800;
+      border: 2px solid #fff;
+      cursor: pointer;
+    }
     #startOverlay, #helpOverlay {
       position: fixed; inset: 0; z-index: 100; display: grid; place-items: center;
       padding: 18px;
@@ -147,12 +157,13 @@
     @media (pointer: fine) and (min-width: 900px) {
       #controls { opacity: 0.90; }
     }
-    @media (max-width: 600px) {
-      #hud { width: calc(100vw - 126px); padding: 9px 11px; }
-      #gameTitle { font-size: 11px; }
-      #score { font-size: 18px; }
-      #mission { display: none; }
-      .dialog { padding: 20px; }
+
+    /* ── スマホ用：HUDを透過 ── */
+    @media (max-width: 900px) {
+      #hud {
+        opacity: 0.45;
+        transition: opacity 0.2s;
+      }
     }
   </style>
 <base target="_blank">
@@ -382,7 +393,7 @@
         };
       });
 
-      // ---------- 以下、元のコードを一切変更せず、必要な部分のみ t() で置き換え ----------
+      // ---------- 以下、元のコードを一部変更 ----------
       const clamp = THREE.MathUtils.clamp;
       const lerp = THREE.MathUtils.lerp;
       const scene = new THREE.Scene();
@@ -392,7 +403,13 @@
       
       let camYaw = 2.4; 
       let camPitch = 0.42;
-      const camDist = 11.2;
+      let camDist = 11.2;   // ★ const → let に変更（縦画面で自動調整するため）
+
+      // 縦画面ならカメラを遠くに
+      function updateCamDistByOrientation() {
+        const aspect = window.innerWidth / window.innerHeight;
+        camDist = aspect < 1 ? 16.5 : 11.2;  // 縦なら16.5、横なら11.2
+      }
 
       const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.8));
@@ -1229,6 +1246,7 @@
       }
 
       function updateCamera(delta) {
+        updateCamDistByOrientation();  // 縦画面ならカメラを遠く
         const upperWorld = new THREE.Vector3(); upper.getWorldPosition(upperWorld);
         
         const targetX = upperWorld.x;
@@ -1334,6 +1352,7 @@
       }
 
       window.addEventListener("resize", () => {
+        updateCamDistByOrientation();  // 画面回転時に距離を再計算
         camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.8)); renderer.setSize(window.innerWidth, window.innerHeight);
       });
