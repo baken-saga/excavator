@@ -160,40 +160,7 @@
   #mission { display: none; }
   .dialog { padding: 20px; }
 }
- /* ── スマホ用 単一丸ジョイスティック ── */
-.mobile-track-joystick {
-  display: none;                    /* 普段は隠す（PC） */
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background: rgba(0,0,0,0.5);
-  border: 2px solid rgba(255,255,255,0.3);
-  position: relative;
-  touch-action: none;
-  pointer-events: auto;
-  margin: 0 auto;
-}
-.mobile-track-joystick .mobile-track-knob {
-  width: 45%;
-  height: 45%;
-  background: radial-gradient(circle at 35% 30%, #ffd95c, #d88c00);
-  border-radius: 50%;
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.6);
-  border: 2px solid rgba(255,255,255,0.4);
-}
-
-/* スマホ・タブレットのときだけ表示、スライダーは隠す */
-@media (max-width: 900px), (hover: none) and (pointer: coarse) {
-  #trackControls .trackBox {
-    display: none;             /* 2本スライダーを消す */
-  }
-  .mobile-track-joystick {
-    display: block;            /* 丸ジョイスティックを表示 */
-  }
-}                                        
+                       
   </style>
 <base target="_blank">
 </head>
