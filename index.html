@@ -162,6 +162,47 @@
   #mission { display: none; }
   .dialog { padding: 20px; }
 }
+                                         /* === 走行ノブ（楕円） === */
+.trackKnobContainer {
+  position: relative;
+  width: 44px;
+  height: 130px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.trackKnob {
+  width: 36px;
+  height: 52px;
+  background: radial-gradient(circle at 35% 30%, #d88c00, #a05f00);
+  border: 2px solid rgba(255,255,255,0.4);
+  border-radius: 50% / 45%;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: box-shadow 0.1s;
+  touch-action: none;
+  cursor: pointer;
+}
+
+.trackKnob:active {
+  box-shadow: 0 0 18px #ffbb33;
+}
+
+.trackLabel {
+  position: absolute;
+  bottom: -20px;
+  font-size: 10px;
+  color: rgba(255,255,255,0.7);
+  text-shadow: 0 1px 2px #000;
+  pointer-events: none;
+}
   </style>
 <base target="_blank">
 </head>
@@ -184,9 +225,15 @@
       <div class="leverHints"><span id="leftSwingHint">旋回 ←</span><span id="rightSwingHint">→ 旋回</span></div>
     </div>
     <div id="trackControls">
-      <div class="trackBox"><span id="leftTrackLabel">左キャタ</span><input type="range" id="leftTrackSlider" min="-1" max="1" step="0.1" value="0"></div>
-      <div class="trackBox"><span id="rightTrackLabel">右キャタ</span><input type="range" id="rightTrackSlider" min="-1" max="1" step="0.1" value="0"></div>
-    </div>
+  <div class="trackKnobContainer" id="leftTrackKnobArea">
+    <div class="trackKnob" id="leftTrackKnob"></div>
+    <span class="trackLabel">L</span>
+  </div>
+  <div class="trackKnobContainer" id="rightTrackKnobArea">
+    <div class="trackKnob" id="rightTrackKnob"></div>
+    <span class="trackLabel">R</span>
+  </div>
+</div>
     <div class="joystickBlock">
       <div id="rightJoystick" class="joystick"><div class="verticalHint" id="rightHint">アーム<br>↑ ↓</div><div class="knob"></div></div>
       <div class="leverHints"><span id="curlHint">巻く ←</span><span id="dumpHint">→ 開く</span></div>
@@ -910,25 +957,72 @@
         };
       }
 
-      const leftTrackSlider = document.getElementById("leftTrackSlider");
-      const rightTrackSlider = document.getElementById("rightTrackSlider");
-      document.getElementById('trackControls').addEventListener('pointerdown', (e) => {
-  e.stopPropagation();
-});
-      
-      function getTrackInputs() {
-        let tL = 0.0;
-        let tR = 0.0;
-        if (keyboard.ArrowUp) { tL = 1.0; tR = 1.0; }
-        else if (keyboard.ArrowDown) { tL = -1.0; tR = -1.0; }
-        else if (keyboard.ArrowLeft) { tL = -1.0; tR = 1.0; }
-        else if (keyboard.ArrowRight) { tL = 1.0; tR = -1.0; }
-        else {
-          tL = parseFloat(leftTrackSlider.value);
-          tR = parseFloat(rightTrackSlider.value);
-        }
-        return { left: tL, right: tR };
-      }
+     // ---------- 走行ノブ（楕円ジョイスティック風） ----------
+const leftTrackKnob = document.getElementById('leftTrackKnob');
+const rightTrackKnob = document.getElementById('rightTrackKnob');
+const leftTrackArea = document.getElementById('leftTrackKnobArea');
+const rightTrackArea = document.getElementById('rightTrackKnobArea');
+
+let trackLeftValue = 0;
+let trackRightValue = 0;
+
+function setupTrackKnob(knob, area, setValueCallback) {
+  let activePointerId = null;
+  const areaHeight = area.clientHeight;
+  const halfHeight = areaHeight / 2;
+
+  function updateKnobPosition(clientY) {
+    const rect = area.getBoundingClientRect();
+    let offsetY = clientY - (rect.top + halfHeight);
+    let value = -offsetY / halfHeight;
+    value = clamp(value, -1, 1);
+    setValueCallback(value);
+    knob.style.transform = `translate(-50%, -50%) translateY(${offsetY * 0.8}px)`;
+  }
+
+  function onPointerDown(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    activePointerId = e.pointerId;
+    area.setPointerCapture(e.pointerId);
+    updateKnobPosition(e.clientY);
+    initAudio();
+  }
+
+  function onPointerMove(e) {
+    if (e.pointerId !== activePointerId) return;
+    e.preventDefault();
+    updateKnobPosition(e.clientY);
+  }
+
+  function onPointerUp(e) {
+    if (e.pointerId !== activePointerId) return;
+    activePointerId = null;
+    area.releasePointerCapture(e.pointerId);
+    setValueCallback(0);
+    knob.style.transform = 'translate(-50%, -50%)';
+  }
+
+  area.addEventListener('pointerdown', onPointerDown);
+  area.addEventListener('pointermove', onPointerMove);
+  area.addEventListener('pointerup', onPointerUp);
+  area.addEventListener('pointercancel', onPointerUp);
+}
+
+setupTrackKnob(leftTrackKnob, leftTrackArea, (val) => { trackLeftValue = val; });
+setupTrackKnob(rightTrackKnob, rightTrackArea, (val) => { trackRightValue = val; });
+
+// 新しい getTrackInputs（キーボード操作も活かす）
+getTrackInputs = function() {
+  let tL = trackLeftValue;
+  let tR = trackRightValue;
+  if (keyboard.ArrowUp) { tL = 1.0; tR = 1.0; }
+  else if (keyboard.ArrowDown) { tL = -1.0; tR = -1.0; }
+  else if (keyboard.ArrowLeft) { tL = -1.0; tR = 1.0; }
+  else if (keyboard.ArrowRight) { tL = 1.0; tR = -1.0; }
+  return { left: tL, right: tR };
+};     
+     
 
       function getContactPointWorld(lx, lz) {
         const rotY = machineRoot.rotation.y;
