@@ -1094,11 +1094,6 @@ let getTrackInputs = function() {
           terrainUpdateFlag = true;
         }
 
-        if (!keyboard.ArrowUp && !keyboard.ArrowDown && !keyboard.ArrowLeft && !keyboard.ArrowRight) {
-          leftTrackSlider.value = approach(parseFloat(leftTrackSlider.value), 0.0, delta * 3.5);
-          rightTrackSlider.value = approach(parseFloat(rightTrackSlider.value), 0.0, delta * 3.5);
-        }
-
         let resistance = 0.0;
         if (depth > -0.05 && worldTipPos.x > 1.2 && worldTipPos.x < 12.0 && Math.abs(worldTipPos.z) < 4.8) {
           const bktMatrix = bucket.matrixWorld;
