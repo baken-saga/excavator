@@ -397,7 +397,11 @@
       
       let camYaw = 2.4; 
       let camPitch = 0.42;
-      const camDist = 11.2;
+      let camDist = 11.2;
+      function updateCamDistByOrientation() {
+  const aspect = window.innerWidth / window.innerHeight;
+  camDist = aspect < 1 ? 16.5 : 11.2;  // 縦画面なら16.5、横画面なら11.2
+}
 
       const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.8));
@@ -1234,6 +1238,7 @@
       }
 
       function updateCamera(delta) {
+        updateCamDistByOrientation();
         const upperWorld = new THREE.Vector3(); upper.getWorldPosition(upperWorld);
         
         const targetX = upperWorld.x;
@@ -1339,6 +1344,7 @@
       }
 
       window.addEventListener("resize", () => {
+        updateCamDistByOrientation();
         camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.8)); renderer.setSize(window.innerWidth, window.innerHeight);
       });
