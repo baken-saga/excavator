@@ -1013,7 +1013,7 @@ setupTrackKnob(leftTrackKnob, leftTrackArea, (val) => { trackLeftValue = val; })
 setupTrackKnob(rightTrackKnob, rightTrackArea, (val) => { trackRightValue = val; });
 
 // 新しい getTrackInputs（キーボード操作も活かす）
-getTrackInputs = function() {
+let getTrackInputs = function() {
   let tL = trackLeftValue;
   let tR = trackRightValue;
   if (keyboard.ArrowUp) { tL = 1.0; tR = 1.0; }
