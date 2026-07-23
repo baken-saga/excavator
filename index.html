@@ -958,8 +958,11 @@ let mobileTrackX = 0;
 let mobileTrackY = 0;
 
 if (mobileTrackJoystick) {
-  const joystickRadius = mobileTrackJoystick.clientWidth / 2;
   let activePointerId = null;
+
+  function getJoystickRadius() {
+    return mobileTrackJoystick.clientWidth / 2;
+  }
 
   function updateMobileKnob(clientX, clientY) {
     const rect = mobileTrackJoystick.getBoundingClientRect();
@@ -968,7 +971,7 @@ if (mobileTrackJoystick) {
     let dx = clientX - centerX;
     let dy = clientY - centerY;
     const distance = Math.sqrt(dx * dx + dy * dy);
-    const maxRadius = joystickRadius * 0.7;
+    const maxRadius = getJoystickRadius() * 0.7;
 
     if (distance > maxRadius) {
       dx = (dx / distance) * maxRadius;
@@ -976,7 +979,6 @@ if (mobileTrackJoystick) {
     }
 
     mobileTrackKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-
     mobileTrackX = dx / maxRadius;
     mobileTrackY = -dy / maxRadius;
   }
@@ -996,7 +998,7 @@ if (mobileTrackJoystick) {
     initAudio();
   });
 
-  mobileTrackJoystick.addEventListener('pointermove', (e) => {
+   mobileTrackJoystick.addEventListener('pointermove', (e) => {
     if (e.pointerId !== activePointerId) return;
     e.preventDefault();
     updateMobileKnob(e.clientX, e.clientY);
