@@ -182,9 +182,14 @@
       <div class="leverHints"><span id="leftSwingHint">旋回 ←</span><span id="rightSwingHint">→ 旋回</span></div>
     </div>
     <div id="trackControls">
-      <div class="trackBox"><span id="leftTrackLabel">左キャタ</span><input type="range" id="leftTrackSlider" min="-1" max="1" step="0.1" value="0"></div>
-      <div class="trackBox"><span id="rightTrackLabel">右キャタ</span><input type="range" id="rightTrackSlider" min="-1" max="1" step="0.1" value="0"></div>
-    </div>
+  <div class="trackBox"><span id="leftTrackLabel">左キャタ</span><input type="range" id="leftTrackSlider" min="-1" max="1" step="0.1" value="0"></div>
+  <div class="trackBox"><span id="rightTrackLabel">右キャタ</span><input type="range" id="rightTrackSlider" min="-1" max="1" step="0.1" value="0"></div>
+
+  <!-- ★ スマホ用の丸ジョイスティック（追加） -->
+  <div id="mobileTrackJoystick" class="mobile-track-joystick">
+    <div class="mobile-track-knob"></div>
+  </div>
+</div>
     <div class="joystickBlock">
       <div id="rightJoystick" class="joystick"><div class="verticalHint" id="rightHint">アーム<br>↑ ↓</div><div class="knob"></div></div>
       <div class="leverHints"><span id="curlHint">巻く ←</span><span id="dumpHint">→ 開く</span></div>
@@ -913,21 +918,93 @@
       document.getElementById('trackControls').addEventListener('pointerdown', (e) => {
         e.stopPropagation();
       });
+      // ── スマホ用 単一丸ジョイスティック ──
+const mobileTrackJoystick = document.getElementById('mobileTrackJoystick');
+const mobileTrackKnob = mobileTrackJoystick.querySelector('.mobile-track-knob');
+
+let mobileTrackX = 0;
+let mobileTrackY = 0;
+
+if (mobileTrackJoystick) {
+  const joystickRadius = mobileTrackJoystick.clientWidth / 2;
+  let activePointerId = null;
+
+  function updateMobileKnob(clientX, clientY) {
+    const rect = mobileTrackJoystick.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    let dx = clientX - centerX;
+    let dy = clientY - centerY;
+    const distance = Math.hypot(dx, dy);
+    const maxRadius = joystickRadius * 0.7;
+
+    if (distance > maxRadius) {
+      dx = (dx / distance) * maxRadius;
+      dy = (dy / distance) * maxRadius;
+    }
+
+    mobileTrackKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+
+    mobileTrackX = dx / maxRadius;
+    mobileTrackY = -dy / maxRadius;
+  }
+
+  function resetMobileKnob() {
+    mobileTrackKnob.style.transform = 'translate(-50%, -50%)';
+    mobileTrackX = 0;
+    mobileTrackY = 0;
+  }
+
+  mobileTrackJoystick.addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    activePointerId = e.pointerId;
+    mobileTrackJoystick.setPointerCapture(e.pointerId);
+    updateMobileKnob(e.clientX, e.clientY);
+    initAudio();
+  });
+
+  mobileTrackJoystick.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== activePointerId) return;
+    e.preventDefault();
+    updateMobileKnob(e.clientX, e.clientY);
+  });
+
+  mobileTrackJoystick.addEventListener('pointerup', (e) => {
+    if (e.pointerId !== activePointerId) return;
+    activePointerId = null;
+    mobileTrackJoystick.releasePointerCapture(e.pointerId);
+    resetMobileKnob();
+  });
+
+  mobileTrackJoystick.addEventListener('pointercancel', (e) => {
+    activePointerId = null;
+    resetMobileKnob();
+  });
+}
       
       function getTrackInputs() {
-        let tL = 0.0;
-        let tR = 0.0;
-        if (keyboard.ArrowUp) { tL = 1.0; tR = 1.0; }
-        else if (keyboard.ArrowDown) { tL = -1.0; tR = -1.0; }
-        else if (keyboard.ArrowLeft) { tL = -1.0; tR = 1.0; }
-        else if (keyboard.ArrowRight) { tL = 1.0; tR = -1.0; }
-        else {
-          tL = parseFloat(leftTrackSlider.value);
-          tR = parseFloat(rightTrackSlider.value);
-        }
-        return { left: tL, right: tR };
-      }
+  // キーボード（矢印キー）が最優先
+  if (keyboard.ArrowUp)    return { left: 1.0, right: 1.0 };
+  if (keyboard.ArrowDown)  return { left: -1.0, right: -1.0 };
+  if (keyboard.ArrowLeft)  return { left: -1.0, right: 1.0 };
+  if (keyboard.ArrowRight) return { left: 1.0, right: -1.0 };
 
+  // スマホ用の丸ジョイスティックが表示されているとき
+  if (mobileTrackJoystick && window.getComputedStyle(mobileTrackJoystick).display !== 'none') {
+    let tL = mobileTrackY + mobileTrackX;
+    let tR = mobileTrackY - mobileTrackX;
+    const maxVal = Math.max(Math.abs(tL), Math.abs(tR), 1);
+    tL /= maxVal;
+    tR /= maxVal;
+    return { left: tL, right: tR };
+  }
+
+  // PC用のスライダー（今まで通り）
+  let tL = parseFloat(leftTrackSlider.value);
+  let tR = parseFloat(rightTrackSlider.value);
+  return { left: tL, right: tR };
+}
       function getContactPointWorld(lx, lz) {
         const rotY = machineRoot.rotation.y;
         const cos = Math.cos(rotY), sin = Math.sin(rotY);
