@@ -148,7 +148,7 @@
     }
 
     /* ── スマホ・タブレット用の調整 ── */
-    @media (max-width: 900px), (hover: none) and (pointer: coarse) {
+    @media (max-width: 900px) {
       #hud {
         width: calc(100vw - 126px);
         padding: 9px 11px;
@@ -1023,7 +1023,7 @@ if (mobileTrackJoystick) {
   if (keyboard.ArrowRight) return { left: 1.0, right: -1.0 };
 
   // スマホ用の丸ジョイスティックが表示されているとき
-  if (mobileTrackJoystick && window.getComputedStyle(mobileTrackJoystick).display !== 'none') {
+  if (window.innerWidth <= 900) {
     let tL = mobileTrackY + mobileTrackX;
     let tR = mobileTrackY - mobileTrackX;
     const maxVal = Math.max(Math.abs(tL), Math.abs(tR), 1);
