@@ -12,7 +12,7 @@
           y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
       })(window,document,"clarity","script","xqsrmilorh");
   </script>
-<style>
+  <style>
     :root {
       color-scheme: dark;
       --yellow: #f6b800;
@@ -103,6 +103,7 @@
       color: rgba(255, 255, 255, 0.72); font-size: 9px; line-height: 1.15;
       text-align: center; pointer-events: none; transform: translate(-50%, -50%);
     }
+    /* === 走行用の中央Wスライダー === */
     #trackControls {
       display: flex; gap: 14px; align-items: center; justify-content: center;
       margin-bottom: 6px; pointer-events: auto;
@@ -146,51 +147,12 @@
     @media (pointer: fine) and (min-width: 900px) {
       #controls { opacity: 0.90; }
     }
-
-    /* ── スマホ・タブレット用の調整 ── */
-    @media (max-width: 900px) {
-      #hud {
-        width: calc(100vw - 126px);
-        padding: 9px 11px;
-        opacity: 0.45;
-        transition: opacity 0.2s;
-      }
+    @media (max-width: 600px) {
+      #hud { width: calc(100vw - 126px); padding: 9px 11px; }
       #gameTitle { font-size: 11px; }
       #score { font-size: 18px; }
       #mission { display: none; }
       .dialog { padding: 20px; }
-
-      #trackControls .trackBox {
-        display: none;
-      }
-      .mobile-track-joystick {
-        display: block;
-      }
-    }
-
-    /* 丸ジョイスティックの基本スタイル（PCでは非表示） */
-    .mobile-track-joystick {
-      display: none;
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      background: rgba(0,0,0,0.5);
-      border: 2px solid rgba(255,255,255,0.3);
-      position: relative;
-      touch-action: none;
-      pointer-events: auto;
-      margin: 0 auto;
-    }
-    .mobile-track-joystick .mobile-track-knob {
-      width: 45%;
-      height: 45%;
-      background: radial-gradient(circle at 35% 30%, #ffd95c, #d88c00);
-      border-radius: 50%;
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
-      border: 2px solid rgba(255,255,255,0.4);
     }
   </style>
 <base target="_blank">
@@ -214,14 +176,9 @@
       <div class="leverHints"><span id="leftSwingHint">旋回 ←</span><span id="rightSwingHint">→ 旋回</span></div>
     </div>
     <div id="trackControls">
-  <div class="trackBox"><span id="leftTrackLabel">左キャタ</span><input type="range" id="leftTrackSlider" min="-1" max="1" step="0.1" value="0"></div>
-  <div class="trackBox"><span id="rightTrackLabel">右キャタ</span><input type="range" id="rightTrackSlider" min="-1" max="1" step="0.1" value="0"></div>
-
-  <!-- ★ スマホ用の丸ジョイスティック（追加） -->
-  <div id="mobileTrackJoystick" class="mobile-track-joystick">
-    <div class="mobile-track-knob"></div>
-  </div>
-</div>
+      <div class="trackBox"><span id="leftTrackLabel">左キャタ</span><input type="range" id="leftTrackSlider" min="-1" max="1" step="0.1" value="0"></div>
+      <div class="trackBox"><span id="rightTrackLabel">右キャタ</span><input type="range" id="rightTrackSlider" min="-1" max="1" step="0.1" value="0"></div>
+    </div>
     <div class="joystickBlock">
       <div id="rightJoystick" class="joystick"><div class="verticalHint" id="rightHint">アーム<br>↑ ↓</div><div class="knob"></div></div>
       <div class="leverHints"><span id="curlHint">巻く ←</span><span id="dumpHint">→ 開く</span></div>
@@ -363,13 +320,16 @@
         document.getElementById('leftTrackLabel').textContent = t('leftTrack');
         document.getElementById('rightTrackLabel').textContent = t('rightTrack');
 
+        // overlays
         renderStartOverlay();
         renderHelpOverlay();
 
+        // dynamic status if not hauling
         const statusEl = document.getElementById('status');
         if (statusEl.dataset.state !== 'hauling') {
           statusEl.textContent = t('statusMoving');
         }
+        // language button
         document.getElementById('langButton').textContent = currentLang === 'ja' ? '🌐 JA' : '🌐 EN';
       }
 
@@ -413,6 +373,7 @@
       document.getElementById('langButton').addEventListener('click', () => {
         currentLang = currentLang === 'ja' ? 'en' : 'ja';
         updateAllTexts();
+        // re-bind help button because the overlay was rebuilt
         document.getElementById('helpButton').onclick = () => {
           document.getElementById('helpOverlay').style.display = 'grid';
         };
@@ -421,7 +382,7 @@
         };
       });
 
-      // ---------- 3D & 物理 ----------
+      // ---------- 以下、元のコードを一切変更せず、必要な部分のみ t() で置き換え ----------
       const clamp = THREE.MathUtils.clamp;
       const lerp = THREE.MathUtils.lerp;
       const scene = new THREE.Scene();
@@ -431,13 +392,7 @@
       
       let camYaw = 2.4; 
       let camPitch = 0.42;
-      let camDist = 11.2;
-
-      // 縦画面ならカメラを遠くに
-      function updateCamDistByOrientation() {
-        const aspect = window.innerWidth / window.innerHeight;
-        camDist = aspect < 1 ? 16.5 : 11.2;
-      }
+      const camDist = 11.2;
 
       const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.8));
@@ -945,100 +900,21 @@
 
       const leftTrackSlider = document.getElementById("leftTrackSlider");
       const rightTrackSlider = document.getElementById("rightTrackSlider");
-
-      // ★ 走行レバー操作中はカメラ回転をブロック
-      document.getElementById('trackControls').addEventListener('pointerdown', (e) => {
-        e.stopPropagation();
-      });
-      // ── スマホ用 単一丸ジョイスティック ──
-const mobileTrackJoystick = document.getElementById('mobileTrackJoystick');
-const mobileTrackKnob = mobileTrackJoystick.querySelector('.mobile-track-knob');
-
-let mobileTrackX = 0;
-let mobileTrackY = 0;
-
-if (mobileTrackJoystick) {
-  let activePointerId = null;
-
-  function getJoystickRadius() {
-    return mobileTrackJoystick.clientWidth / 2;
-  }
-
-  function updateMobileKnob(clientX, clientY) {
-    const rect = mobileTrackJoystick.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    let dx = clientX - centerX;
-    let dy = clientY - centerY;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    const maxRadius = getJoystickRadius() * 0.7;
-
-    if (distance > maxRadius) {
-      dx = (dx / distance) * maxRadius;
-      dy = (dy / distance) * maxRadius;
-    }
-
-    mobileTrackKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-    mobileTrackX = dx / maxRadius;
-    mobileTrackY = -dy / maxRadius;
-  }
-
-  function resetMobileKnob() {
-    mobileTrackKnob.style.transform = 'translate(-50%, -50%)';
-    mobileTrackX = 0;
-    mobileTrackY = 0;
-  }
-
-  mobileTrackJoystick.addEventListener('pointerdown', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    activePointerId = e.pointerId;
-    mobileTrackJoystick.setPointerCapture(e.pointerId);
-    updateMobileKnob(e.clientX, e.clientY);
-    initAudio();
-  });
-
-   mobileTrackJoystick.addEventListener('pointermove', (e) => {
-    if (e.pointerId !== activePointerId) return;
-    e.preventDefault();
-    updateMobileKnob(e.clientX, e.clientY);
-  });
-
-  mobileTrackJoystick.addEventListener('pointerup', (e) => {
-    if (e.pointerId !== activePointerId) return;
-    activePointerId = null;
-    mobileTrackJoystick.releasePointerCapture(e.pointerId);
-    resetMobileKnob();
-  });
-
-  mobileTrackJoystick.addEventListener('pointercancel', (e) => {
-    activePointerId = null;
-    resetMobileKnob();
-  });
-}
       
       function getTrackInputs() {
-  // キーボード（矢印キー）が最優先
-  if (keyboard.ArrowUp)    return { left: 1.0, right: 1.0 };
-  if (keyboard.ArrowDown)  return { left: -1.0, right: -1.0 };
-  if (keyboard.ArrowLeft)  return { left: -1.0, right: 1.0 };
-  if (keyboard.ArrowRight) return { left: 1.0, right: -1.0 };
+        let tL = 0.0;
+        let tR = 0.0;
+        if (keyboard.ArrowUp) { tL = 1.0; tR = 1.0; }
+        else if (keyboard.ArrowDown) { tL = -1.0; tR = -1.0; }
+        else if (keyboard.ArrowLeft) { tL = -1.0; tR = 1.0; }
+        else if (keyboard.ArrowRight) { tL = 1.0; tR = -1.0; }
+        else {
+          tL = parseFloat(leftTrackSlider.value);
+          tR = parseFloat(rightTrackSlider.value);
+        }
+        return { left: tL, right: tR };
+      }
 
-  // スマホ用の丸ジョイスティックが表示されているとき
-  if (window.innerWidth <= 900) {
-    let tL = mobileTrackY + mobileTrackX;
-    let tR = mobileTrackY - mobileTrackX;
-    const maxVal = Math.max(Math.abs(tL), Math.abs(tR), 1);
-    tL /= maxVal;
-    tR /= maxVal;
-    return { left: tL, right: tR };
-  }
-
-  // PC用のスライダー（今まで通り）
-  let tL = parseFloat(leftTrackSlider.value);
-  let tR = parseFloat(rightTrackSlider.value);
-  return { left: tL, right: tR };
-}
       function getContactPointWorld(lx, lz) {
         const rotY = machineRoot.rotation.y;
         const cos = Math.cos(rotY), sin = Math.sin(rotY);
@@ -1107,6 +983,11 @@ if (mobileTrackJoystick) {
             setTerrainHeightAt(pR_outer.x, pR_outer.z, 0.008 * delta);
           }
           terrainUpdateFlag = true;
+        }
+
+        if (!keyboard.ArrowUp && !keyboard.ArrowDown && !keyboard.ArrowLeft && !keyboard.ArrowRight) {
+          leftTrackSlider.value = approach(parseFloat(leftTrackSlider.value), 0.0, delta * 3.5);
+          rightTrackSlider.value = approach(parseFloat(rightTrackSlider.value), 0.0, delta * 3.5);
         }
 
         let resistance = 0.0;
@@ -1348,7 +1229,6 @@ if (mobileTrackJoystick) {
       }
 
       function updateCamera(delta) {
-        updateCamDistByOrientation();
         const upperWorld = new THREE.Vector3(); upper.getWorldPosition(upperWorld);
         
         const targetX = upperWorld.x;
@@ -1414,6 +1294,7 @@ if (mobileTrackJoystick) {
         }
       }
 
+      // 初期描画とイベント
       updateAllTexts();
 
       document.getElementById("startButton").addEventListener("click", () => {
@@ -1453,7 +1334,6 @@ if (mobileTrackJoystick) {
       }
 
       window.addEventListener("resize", () => {
-        updateCamDistByOrientation();
         camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.8)); renderer.setSize(window.innerWidth, window.innerHeight);
       });
