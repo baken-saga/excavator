@@ -103,10 +103,13 @@
       color: rgba(255, 255, 255, 0.72); font-size: 9px; line-height: 1.15;
       text-align: center; pointer-events: none; transform: translate(-50%, -50%);
     }
-    /* === 走行用の中央Wスライダー === */
+    /* === 走行用の中央スライダーとボタン === */
     #trackControls {
       display: flex; gap: 14px; align-items: center; justify-content: center;
       margin-bottom: 6px; pointer-events: auto;
+    }
+    .trackColumn {
+      display: flex; flex-direction: column; align-items: center;
     }
     .trackBox {
       display: flex; flex-direction: column; align-items: center;
@@ -119,16 +122,29 @@
       cursor: ns-resize; outline: none; background: rgba(0,0,0,0.5);
       border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;
     }
-    /* スライダーのつまみを大きくして操作しやすく */
     .trackBox input[type="range"]::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      background: #f6b800;
-      border: 2px solid #fff;
-      cursor: pointer;
+      width: 30px; height: 30px; border-radius: 50%;
+      background: #f6b800; border: 2px solid #fff; cursor: pointer;
     }
+    /* 前進・後退ボタン */
+    .track-btn {
+      display: none;            /* PCでは非表示 */
+      width: 40px; height: 32px;
+      margin: 3px 0;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-radius: 8px;
+      background: rgba(0,0,0,0.55);
+      color: #ffd84a;
+      font-size: 22px; font-weight: bold;
+      text-align: center; line-height: 1.2;
+      cursor: pointer; touch-action: manipulation;
+      pointer-events: auto;
+    }
+    @media (max-width: 900px) {
+      .track-btn { display: block; }  /* スマホで表示 */
+    }
+
     #startOverlay, #helpOverlay {
       position: fixed; inset: 0; z-index: 100; display: grid; place-items: center;
       padding: 18px;
@@ -157,8 +173,7 @@
     @media (pointer: fine) and (min-width: 900px) {
       #controls { opacity: 0.90; }
     }
-
-    /* ── スマホ用：HUDを透過 ── */
+    /* ── スマホ用：HUD透過 ── */
     @media (max-width: 900px) {
       #hud {
         opacity: 0.45;
@@ -187,8 +202,24 @@
       <div class="leverHints"><span id="leftSwingHint">旋回 ←</span><span id="rightSwingHint">→ 旋回</span></div>
     </div>
     <div id="trackControls">
-      <div class="trackBox"><span id="leftTrackLabel">左キャタ</span><input type="range" id="leftTrackSlider" min="-1" max="1" step="0.1" value="0"></div>
-      <div class="trackBox"><span id="rightTrackLabel">右キャタ</span><input type="range" id="rightTrackSlider" min="-1" max="1" step="0.1" value="0"></div>
+      <!-- 左キャタピラ用 -->
+      <div class="trackColumn">
+        <button class="track-btn" id="btnLeftFwd">▲</button>
+        <div class="trackBox">
+          <span id="leftTrackLabel">左キャタ</span>
+          <input type="range" id="leftTrackSlider" min="-1" max="1" step="0.1" value="0">
+        </div>
+        <button class="track-btn" id="btnLeftBwd">▼</button>
+      </div>
+      <!-- 右キャタピラ用 -->
+      <div class="trackColumn">
+        <button class="track-btn" id="btnRightFwd">▲</button>
+        <div class="trackBox">
+          <span id="rightTrackLabel">右キャタ</span>
+          <input type="range" id="rightTrackSlider" min="-1" max="1" step="0.1" value="0">
+        </div>
+        <button class="track-btn" id="btnRightBwd">▼</button>
+      </div>
     </div>
     <div class="joystickBlock">
       <div id="rightJoystick" class="joystick"><div class="verticalHint" id="rightHint">アーム<br>↑ ↓</div><div class="knob"></div></div>
@@ -331,16 +362,13 @@
         document.getElementById('leftTrackLabel').textContent = t('leftTrack');
         document.getElementById('rightTrackLabel').textContent = t('rightTrack');
 
-        // overlays
         renderStartOverlay();
         renderHelpOverlay();
 
-        // dynamic status if not hauling
         const statusEl = document.getElementById('status');
         if (statusEl.dataset.state !== 'hauling') {
           statusEl.textContent = t('statusMoving');
         }
-        // language button
         document.getElementById('langButton').textContent = currentLang === 'ja' ? '🌐 JA' : '🌐 EN';
       }
 
@@ -384,7 +412,6 @@
       document.getElementById('langButton').addEventListener('click', () => {
         currentLang = currentLang === 'ja' ? 'en' : 'ja';
         updateAllTexts();
-        // re-bind help button because the overlay was rebuilt
         document.getElementById('helpButton').onclick = () => {
           document.getElementById('helpOverlay').style.display = 'grid';
         };
@@ -393,7 +420,7 @@
         };
       });
 
-      // ---------- 以下、元のコードを一部変更 ----------
+      // ---------- 3D & 物理 ----------
       const clamp = THREE.MathUtils.clamp;
       const lerp = THREE.MathUtils.lerp;
       const scene = new THREE.Scene();
@@ -403,12 +430,11 @@
       
       let camYaw = 2.4; 
       let camPitch = 0.42;
-      let camDist = 11.2;   // ★ const → let に変更（縦画面で自動調整するため）
+      let camDist = 11.2;
 
-      // 縦画面ならカメラを遠くに
       function updateCamDistByOrientation() {
         const aspect = window.innerWidth / window.innerHeight;
-        camDist = aspect < 1 ? 16.5 : 11.2;  // 縦なら16.5、横なら11.2
+        camDist = aspect < 1 ? 16.5 : 11.2;
       }
 
       const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
@@ -917,6 +943,29 @@
 
       const leftTrackSlider = document.getElementById("leftTrackSlider");
       const rightTrackSlider = document.getElementById("rightTrackSlider");
+
+      // ★ 前進・後退ボタンの設定（スマホ用）
+      function bindTrackButton(id, key) {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        btn.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          keyboard[key] = true;
+          initAudio();
+        });
+        btn.addEventListener('pointerup', (e) => {
+          e.preventDefault();
+          keyboard[key] = false;
+        });
+        btn.addEventListener('pointerleave', () => {
+          keyboard[key] = false;
+        });
+      }
+      bindTrackButton('btnLeftFwd',  'ArrowUp');
+      bindTrackButton('btnRightFwd', 'ArrowUp');
+      bindTrackButton('btnLeftBwd',  'ArrowDown');
+      bindTrackButton('btnRightBwd', 'ArrowDown');
       
       function getTrackInputs() {
         let tL = 0.0;
@@ -1246,7 +1295,7 @@
       }
 
       function updateCamera(delta) {
-        updateCamDistByOrientation();  // 縦画面ならカメラを遠く
+        updateCamDistByOrientation();
         const upperWorld = new THREE.Vector3(); upper.getWorldPosition(upperWorld);
         
         const targetX = upperWorld.x;
@@ -1312,7 +1361,6 @@
         }
       }
 
-      // 初期描画とイベント
       updateAllTexts();
 
       document.getElementById("startButton").addEventListener("click", () => {
@@ -1352,7 +1400,7 @@
       }
 
       window.addEventListener("resize", () => {
-        updateCamDistByOrientation();  // 画面回転時に距離を再計算
+        updateCamDistByOrientation();
         camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.8)); renderer.setSize(window.innerWidth, window.innerHeight);
       });
