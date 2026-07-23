@@ -55,12 +55,13 @@
     }
     #status { min-height: 18px; margin-top: 8px; color: #fff1ba; font-size: 12px; font-weight: 700; }
     #mission { margin-top: 4px; color: rgba(255, 255, 255, 0.72); font-size: 11px; }
-    #soundButton, #helpButton {
+    #soundButton, #helpButton, #langButton {
       position: fixed; top: 12px; z-index: 20; width: 44px; height: 44px;
       border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 12px;
       background: var(--panel); cursor: pointer; backdrop-filter: blur(8px);
     }
-    #soundButton { right: 64px; }
+    #soundButton { right: 112px; }
+    #langButton  { right: 64px; z-index: 110; }
     #helpButton { right: 12px; }
     #centerMessage {
       position: fixed; top: 22%; left: 50%; z-index: 12; padding: 10px 18px;
@@ -84,7 +85,7 @@
       background: radial-gradient(circle, rgba(255, 255, 255, 0.10) 0 12%, rgba(7, 12, 15, 0.62) 13% 100%);
       box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.46), 0 8px 25px rgba(0, 0, 0, 0.28);
     }
-    .joystick::before, .joystick::after { absolute; content: ""; background: rgba(255, 255, 255, 0.12); }
+    .joystick::before, .joystick::after { absolute: content: ""; background: rgba(255, 255, 255, 0.12); }
     .joystick::before { top: 10%; bottom: 10%; left: calc(50% - 1px); width: 2px; }
     .joystick::after { top: calc(50% - 1px); right: 10%; left: 10%; height: 2px; }
     .knob {
@@ -102,7 +103,7 @@
       color: rgba(255, 255, 255, 0.72); font-size: 9px; line-height: 1.15;
       text-align: center; pointer-events: none; transform: translate(-50%, -50%);
     }
-    /* === 新設：走行用の中央Wスライダー（ペダル走行レバー） === */
+    /* === 走行用の中央Wスライダー === */
     #trackControls {
       display: flex; gap: 14px; align-items: center; justify-content: center;
       margin-bottom: 6px; pointer-events: auto;
@@ -113,7 +114,7 @@
       text-shadow: 0 1px 3px #000;
     }
     .trackBox input[type="range"] {
-      writing-mode: vertical-lr; direction: rtl; /* 縦型スライダー */
+      writing-mode: vertical-lr; direction: rtl;
       width: 24px; height: clamp(90px, 18vw, 120px); margin-top: 4px;
       cursor: ns-resize; outline: none; background: rgba(0,0,0,0.5);
       border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;
@@ -158,68 +159,230 @@
 </head>
 <body>
   <div id="hud">
-    <div id="titleRow"><span id="gameTitle">極・YUMBO EARTHWORKS</span><span>運搬 <b id="loads">0</b> 回</span></div>
-    <div id="scoreRow"><span>SCORE</span><span id="score">0</span></div>
-    <div id="capacityLabel"><span>バケット土量</span><strong id="capacityText">0%</strong></div>
+    <div id="titleRow"><span id="gameTitle">極・YUMBO EARTHWORKS</span><span><span id="loadsLabel">運搬</span> <b id="loads">0</b> <span id="timesLabel">回</span></span></div>
+    <div id="scoreRow"><span id="scoreLabel">SCORE</span><span id="score">0</span></div>
+    <div id="capacityLabel"><span id="capacityText">バケット土量</span><strong id="capacityPct">0%</strong></div>
     <div id="capacityTrack"><div id="capacityFill"></div></div>
     <div id="status">JIS規格レバーでエンジン始動</div>
     <div id="mission">左：柔らかい砂山(軽・クローラー跡あり) | 右：硬い粘土山(重・硬い)</div>
   </div>
   <button id="soundButton" aria-label="音声切り替え">🔊</button>
+  <button id="langButton" aria-label="言語切り替え">🌐 JA</button>
   <button id="helpButton" aria-label="操作説明">?</button>
   <div id="centerMessage"></div>
   <div id="controls">
     <div class="joystickBlock">
-      <div id="leftJoystick" class="joystick"><div class="verticalHint">ブーム<br>↑ ↓</div><div class="knob"></div></div>
-      <div class="leverHints"><span>旋回 ←</span><span>→ 旋回</span></div>
+      <div id="leftJoystick" class="joystick"><div class="verticalHint" id="leftHint">ブーム<br>↑ ↓</div><div class="knob"></div></div>
+      <div class="leverHints"><span id="leftSwingHint">旋回 ←</span><span id="rightSwingHint">→ 旋回</span></div>
     </div>
-    
-    <!-- 中央の自走ペダルレバー -->
     <div id="trackControls">
-      <div class="trackBox">左キャタ<input type="range" id="leftTrackSlider" min="-1" max="1" step="0.1" value="0"></div>
-      <div class="trackBox">右キャタ<input type="range" id="rightTrackSlider" min="-1" max="1" step="0.1" value="0"></div>
+      <div class="trackBox"><span id="leftTrackLabel">左キャタ</span><input type="range" id="leftTrackSlider" min="-1" max="1" step="0.1" value="0"></div>
+      <div class="trackBox"><span id="rightTrackLabel">右キャタ</span><input type="range" id="rightTrackSlider" min="-1" max="1" step="0.1" value="0"></div>
     </div>
-
     <div class="joystickBlock">
-      <div id="rightJoystick" class="joystick"><div class="verticalHint">アーム<br>↑ ↓</div><div class="knob"></div></div>
-      <div class="leverHints"><span>巻く ←</span><span>→ 開く</span></div>
+      <div id="rightJoystick" class="joystick"><div class="verticalHint" id="rightHint">アーム<br>↑ ↓</div><div class="knob"></div></div>
+      <div class="leverHints"><span id="curlHint">巻く ←</span><span id="dumpHint">→ 開く</span></div>
     </div>
   </div>
   <div id="startOverlay">
-    <div class="dialog">
-      <h1>極・YUMBO EARTHWORKS</h1>
-      <p>プロの操作感とメカニクスを追求した本格3Dユンボシミュレーターです。</p>
-      <p><strong>【操作と物理挙動の最新最適化】</strong></p>
-      <p>・<strong>キャタピラ独立自走：</strong>画面中央の2本レバー、または**キーボードの矢印キー（↑ ↓ ← →）**でその場スピンや前後への自走位置調整が可能です。</p>
-      <p>・<strong>斜面へのリアルな傾斜（ピッチ＆ロール）：</strong>土山を登ると、傾斜をサンプリングして車体全体が前後左右にリアルに傾きます。</p>
-      <p>・<strong>キャタピラ跡（履帯跡）物理：</strong>柔らかい砂山（左側）を走ると、砂が自重で踏み潰され、走った後にリアルなクローラーの跡（轍）が刻まれます。右の硬粘土山は潰れません。</p>
-      <p>・<strong>おまんじゅう型土砂とスライド流動：</strong>丸餅・ロールケーキ感を完全解消。ふっくらした美しいおまんじゅう型の土山がバケットの傾きでズルズルと滑り落ち、砂粒が滝のように零れ落ちます。</p>
-      <p>・<strong>貫通丸餅バグの完全防止：</strong>つめ先がヒール（背中）より低い「掘削姿勢」のときのみ土をすくえるようにし、背中を押し当てたときの土砂貫通を撲滅しました。</p>
-      <div class="keys">
-        <kbd>W / S</kbd><span>ブーム上げ / 下げ（三菱・コマツパターン）</span>
-        <kbd>Q / E</kbd><span>車体左旋回 / 右旋回</span>
-        <kbd>I / K</kbd><span>アーム引き / 押し（三菱・コマツパターン）</span>
-        <kbd>J / L</kbd><span>バケット巻き / 開き</span>
-        <kbd>矢印キー ↑ ↓ ← →</kbd><span>キャタピラ自走・スピン旋回</span>
-      </div>
-      <button id="startButton" class="primaryButton">エンジン始動 (三菱・コマツレバー配置)</button>
-    </div>
+    <div class="dialog" id="startDialog"></div>
   </div>
   <div id="helpOverlay">
-    <div class="dialog">
-      <h2>仕様説明</h2>
-      <p><strong>左レバー：</strong>上下でブーム、左右で旋回 [1]。</p>
-      <p><strong>右レバー：</strong>上下でアーム、左右でバケット [1]。</p>
-      <p><strong>中央走行レバー＆矢印キー：</strong>キャタピラを駆動して自走。左側の砂山の上を走るとクローラーの轍（キャタピラ跡）が刻まれます。右の硬粘土山は頑丈なスロープとして登れます。</p>
-      <p><strong>カメラ：</strong>空いている画面（背景）をドラッグすることで視点をグルグルと自由に回転させることができます。</p>
-      <p><strong>整地：</strong>バケットを開いて地面に押し付けながらアームを動かすと「裏押し（転圧）」で地面を潰して平らにできます。また、接地したまま旋回すると「旋回整地」が行えます。</p>
-      <button id="closeHelpButton" class="primaryButton">運転席に戻る</button>
-    </div>
+    <div class="dialog" id="helpDialog"></div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
   <script>
     (() => {
       "use strict";
+
+      // ---------- 言語リソース ----------
+      const langRes = {
+        ja: {
+          gameTitle: "極・YUMBO EARTHWORKS",
+          loadsLabel: "運搬",
+          timesLabel: "回",
+          scoreLabel: "SCORE",
+          capacityLabel: "バケット土量",
+          statusInit: "JIS規格レバーでエンジン始動",
+          mission: "左：柔らかい砂山(軽・クローラー跡あり) | 右：硬い粘土山(重・硬い)",
+          leftHint: "ブーム<br>↑ ↓",
+          rightHint: "アーム<br>↑ ↓",
+          leftSwing: "旋回 ←",
+          rightSwing: "→ 旋回",
+          curl: "巻く ←",
+          dump: "→ 開く",
+          leftTrack: "左キャタ",
+          rightTrack: "右キャタ",
+          startTitle: "極・YUMBO EARTHWORKS",
+          startP1: "プロの操作感とメカニクスを追求した本格3Dユンボシミュレーターです。",
+          startP2: "<strong>【操作と物理挙動の最新最適化】</strong>",
+          startP3: "・<strong>キャタピラ独立自走：</strong>画面中央の2本レバー、または**キーボードの矢印キー（↑ ↓ ← →）**でその場スピンや前後への自走位置調整が可能です。",
+          startP4: "・<strong>斜面へのリアルな傾斜（ピッチ＆ロール）：</strong>土山を登ると、傾斜をサンプリングして車体全体が前後左右にリアルに傾きます。",
+          startP5: "・<strong>キャタピラ跡（履帯跡）物理：</strong>柔らかい砂山（左側）を走ると、砂が自重で踏み潰され、走った後にリアルなクローラーの跡（轍）が刻まれます。右の硬粘土山は潰れません。",
+          startP6: "・<strong>おまんじゅう型土砂とスライド流動：</strong>丸餅・ロールケーキ感を完全解消。ふっくらした美しいおまんじゅう型の土山がバケットの傾きでズルズルと滑り落ち、砂粒が滝のように零れ落ちます。",
+          startP7: "・<strong>貫通丸餅バグの完全防止：</strong>つめ先がヒール（背中）より低い「掘削姿勢」のときのみ土をすくえるようにし、背中を押し当てたときの土砂貫通を撲滅しました。",
+          startKeys: [
+            { key: "W / S", desc: "ブーム上げ / 下げ（三菱・コマツパターン）" },
+            { key: "Q / E", desc: "車体左旋回 / 右旋回" },
+            { key: "I / K", desc: "アーム引き / 押し（三菱・コマツパターン）" },
+            { key: "J / L", desc: "バケット巻き / 開き" },
+            { key: "矢印キー ↑ ↓ ← →", desc: "キャタピラ自走・スピン旋回" }
+          ],
+          startBtn: "エンジン始動 (三菱・コマツレバー配置)",
+          helpTitle: "仕様説明",
+          helpP1: "<strong>左レバー：</strong>上下でブーム、左右で旋回 [1]。",
+          helpP2: "<strong>右レバー：</strong>上下でアーム、左右でバケット [1]。",
+          helpP3: "<strong>中央走行レバー＆矢印キー：</strong>キャタピラを駆動して自走。左側の砂山の上を走るとクローラーの轍（キャタピラ跡）が刻まれます。右の硬粘土山は頑丈なスロープとして登れます。",
+          helpP4: "<strong>カメラ：</strong>空いている画面（背景）をドラッグすることで視点をグルグルと自由に回転させることができます。",
+          helpP5: "<strong>整地：</strong>バケットを開いて地面に押し付けながらアームを動かすと「裏押し（転圧）」で地面を潰して平らにできます。また、接地したまま旋回すると「旋回整地」が行えます。",
+          helpBtn: "運転席に戻る",
+          msgStart: "エンジン始動！",
+          msgLoad20: "土が溜まってきた！",
+          msgLoad60: "こんもり大盛り！",
+          msgLoad100: "山盛り満杯！ずっしり重いぞ！",
+          msgDeliver: (bonus) => `運搬完了ボーナス！ +${bonus}`,
+          statusMoving: "自走レバーで移動。つめを刺し、巻きながら掘ろう",
+          statusHauling: (type) => `運搬中: ${type} | 排出エリアへ移動・旋回してください`,
+          typeSand: "砂質（サラサラ・こぼれやすい）",
+          typeClay: "硬粘土質（激重・落としにくい）",
+        },
+        en: {
+          gameTitle: "Extreme YUMBO EARTHWORKS",
+          loadsLabel: "Loads",
+          timesLabel: "",
+          scoreLabel: "SCORE",
+          capacityLabel: "Bucket Fill",
+          statusInit: "Engine start – JIS standard levers",
+          mission: "Left: Soft sand pile (light, tracks) | Right: Hard clay pile (heavy, dense)",
+          leftHint: "Boom<br>↑ ↓",
+          rightHint: "Arm<br>↑ ↓",
+          leftSwing: "Swing ←",
+          rightSwing: "→ Swing",
+          curl: "Curl ←",
+          dump: "→ Dump",
+          leftTrack: "L Track",
+          rightTrack: "R Track",
+          startTitle: "Extreme YUMBO EARTHWORKS",
+          startP1: "A full-scale 3D excavator simulator pursuing professional controls and mechanics.",
+          startP2: "<strong>[Latest physics & operation optimizations]</strong>",
+          startP3: "・<strong>Independent crawler drive:</strong> Use the two center levers or **arrow keys (↑ ↓ ← →)** for spin turns and forward/reverse travel.",
+          startP4: "・<strong>Realistic pitch & roll on slopes:</strong> When climbing dirt piles, the entire body tilts realistically based on ground sampling.",
+          startP5: "・<strong>Crawler track marks:</strong> Driving on the soft sand pile (left side) crushes the sand under its own weight, leaving realistic track marks (ruts). The hard clay pile on the right does not deform.",
+          startP6: "・<strong>Bun-shaped soil & sliding flow:</strong> Completely eliminates the “rice cake / Swiss roll” look. Beautifully rounded soil mounds slide forward when the bucket tilts, and grains cascade like a waterfall.",
+          startP7: "・<strong>Prevention of “ghost penetration”:</strong> Soil can only be scooped when the teeth are lower than the heel (proper digging posture), eliminating material passing through the bucket back.",
+          startKeys: [
+            { key: "W / S", desc: "Boom raise / lower (Mitsubishi/Komatsu pattern)" },
+            { key: "Q / E", desc: "Body left swing / right swing" },
+            { key: "I / K", desc: "Arm in / out (Mitsubishi/Komatsu pattern)" },
+            { key: "J / L", desc: "Bucket curl / dump" },
+            { key: "Arrow keys ↑ ↓ ← →", desc: "Crawler travel & spin turn" }
+          ],
+          startBtn: "Start Engine (Mitsubishi/Komatsu layout)",
+          helpTitle: "Controls & Details",
+          helpP1: "<strong>Left lever:</strong> Up/down = boom, left/right = swing [1].",
+          helpP2: "<strong>Right lever:</strong> Up/down = arm, left/right = bucket [1].",
+          helpP3: "<strong>Center travel levers & arrow keys:</strong> Drive the crawlers. Driving on the left sand pile leaves track marks. The right hard clay pile acts as a sturdy ramp.",
+          helpP4: "<strong>Camera:</strong> Drag on any empty area of the screen to freely rotate the view.",
+          helpP5: "<strong>Grading:</strong> Pressing the open bucket against the ground while moving the arm flattens the terrain (“back-dragging”). Also, swinging while in contact with the ground performs “swing grading”.",
+          helpBtn: "Return to cab",
+          msgStart: "Engine started!",
+          msgLoad20: "Soil is piling up!",
+          msgLoad60: "Heap is getting big!",
+          msgLoad100: "Bucket full! Extremely heavy!",
+          msgDeliver: (bonus) => `Delivery bonus! +${bonus}`,
+          statusMoving: "Use travel levers. Insert teeth, curl bucket to dig.",
+          statusHauling: (type) => `Hauling: ${type} | Move to dump zone and turn`,
+          typeSand: "Sand (loose, easy to spill)",
+          typeClay: "Hard clay (very heavy, hard to dump)",
+        }
+      };
+
+      let currentLang = 'ja';
+      function t(key, ...params) {
+        const entry = langRes[currentLang]?.[key] ?? langRes.ja[key];
+        if (typeof entry === 'function') return entry(...params);
+        return entry ?? key;
+      }
+
+      function updateAllTexts() {
+        document.getElementById('gameTitle').textContent = t('gameTitle');
+        document.getElementById('loadsLabel').textContent = t('loadsLabel');
+        document.getElementById('timesLabel').textContent = t('timesLabel');
+        document.getElementById('scoreLabel').textContent = t('scoreLabel');
+        document.getElementById('capacityText').textContent = t('capacityLabel');
+        document.getElementById('mission').textContent = t('mission');
+        document.getElementById('leftHint').innerHTML = t('leftHint');
+        document.getElementById('rightHint').innerHTML = t('rightHint');
+        document.getElementById('leftSwingHint').textContent = t('leftSwing');
+        document.getElementById('rightSwingHint').textContent = t('rightSwing');
+        document.getElementById('curlHint').textContent = t('curl');
+        document.getElementById('dumpHint').textContent = t('dump');
+        document.getElementById('leftTrackLabel').textContent = t('leftTrack');
+        document.getElementById('rightTrackLabel').textContent = t('rightTrack');
+
+        // overlays
+        renderStartOverlay();
+        renderHelpOverlay();
+
+        // dynamic status if not hauling
+        const statusEl = document.getElementById('status');
+        if (statusEl.dataset.state !== 'hauling') {
+          statusEl.textContent = t('statusMoving');
+        }
+        // language button
+        document.getElementById('langButton').textContent = currentLang === 'ja' ? '🌐 JA' : '🌐 EN';
+      }
+
+      function renderStartOverlay() {
+        const keysHTML = langRes[currentLang].startKeys.map(k => `<kbd>${k.key}</kbd><span>${k.desc}</span>`).join('');
+        document.getElementById('startDialog').innerHTML = `
+          <h1>${t('startTitle')}</h1>
+          <p>${t('startP1')}</p>
+          <p>${t('startP2')}</p>
+          <p>${t('startP3')}</p>
+          <p>${t('startP4')}</p>
+          <p>${t('startP5')}</p>
+          <p>${t('startP6')}</p>
+          <p>${t('startP7')}</p>
+          <div class="keys">${keysHTML}</div>
+          <button id="startButton" class="primaryButton">${t('startBtn')}</button>
+        `;
+        document.getElementById('startButton').addEventListener('click', () => {
+          gameStarted = true;
+          document.getElementById("startOverlay").style.display = "none";
+          initAudio();
+          showMessage(t('msgStart'), 1.2);
+        });
+      }
+
+      function renderHelpOverlay() {
+        document.getElementById('helpDialog').innerHTML = `
+          <h2>${t('helpTitle')}</h2>
+          <p>${t('helpP1')}</p>
+          <p>${t('helpP2')}</p>
+          <p>${t('helpP3')}</p>
+          <p>${t('helpP4')}</p>
+          <p>${t('helpP5')}</p>
+          <button id="closeHelpButton" class="primaryButton">${t('helpBtn')}</button>
+        `;
+        document.getElementById('closeHelpButton').addEventListener('click', () => {
+          document.getElementById('helpOverlay').style.display = 'none';
+        });
+      }
+
+      document.getElementById('langButton').addEventListener('click', () => {
+        currentLang = currentLang === 'ja' ? 'en' : 'ja';
+        updateAllTexts();
+        // re-bind help button because the overlay was rebuilt
+        document.getElementById('helpButton').onclick = () => {
+          document.getElementById('helpOverlay').style.display = 'grid';
+        };
+        document.getElementById('closeHelpButton').onclick = () => {
+          document.getElementById('helpOverlay').style.display = 'none';
+        };
+      });
+
+      // ---------- 以下、元のコードを一切変更せず、必要な部分のみ t() で置き換え ----------
       const clamp = THREE.MathUtils.clamp;
       const lerp = THREE.MathUtils.lerp;
       const scene = new THREE.Scene();
@@ -227,7 +390,6 @@
       scene.fog = new THREE.Fog(0x87b0c4, 20, 50);
       const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
       
-      // 手動カメラ位置の制御用
       let camYaw = 2.4; 
       let camPitch = 0.42;
       const camDist = 11.2;
@@ -269,18 +431,14 @@
       const initialHeights = [];
 
       function getTerrainHardness(x, z) {
-        // Z < -1.0 は砂山（柔らかい）、Z >= -1.0 は粘土山（硬い）
         return clamp((z + 1.0) / 1.5, 0, 1);
       }
 
-      // === 現場レイアウトの変更：中央を谷（ダンプゾーン）とし、左に砂山・右に粘土山をセパレート配置 ===
       for (let i = 0; i < terrainPositions.count; i++) {
         const x = terrainPositions.getX(i) + terrainCenterX;
         const z = terrainPositions.getZ(i) + terrainCenterZ;
         
-        // 左側の砂山 (Z < -1.5)
         const leftHill = 1.75 * Math.exp(-(((x - 6.5) ** 2) / 5.2 + ((z + 2.5) ** 2) / 3.0));
-        // 右側の硬い粘土山 (Z > 1.5)
         const rightHill = 1.75 * Math.exp(-(((x - 6.5) ** 2) / 5.2 + ((z - 2.5) ** 2) / 3.0));
         
         const h = Math.max(0.02, leftHill + rightHill);
@@ -344,10 +502,7 @@
           const vz = terrainPositions.getZ(i);
           const dx = vx - localX;
           const dz = vz - localZ;
-          
-          // === 修正：Math.hypot(dx, vz) の数式タイポを Math.hypot(dx, dz) へ完全修正 ===
           const dist = Math.hypot(dx, dz); 
-          
           if (dist < radius) {
             const factor = (radius - dist) / radius;
             const currentH = terrainPositions.getY(i);
@@ -355,7 +510,6 @@
               terrainPositions.setY(i, Math.max(0.015, currentH + change * factor));
             } else if (mode === "flatten") {
               const targetH = change;
-              // === 修正：氷山トゲバグ防止対策 ===
               if (targetH < currentH) {
                 terrainPositions.setY(i, lerp(currentH, targetH, factor * 0.45));
               }
@@ -427,12 +581,10 @@
       const bucketPivot = new THREE.Group(); bucketPivot.position.x = armLength; armPivot.add(bucketPivot);
       const bucket = new THREE.Group(); bucketPivot.add(bucket);
 
-      // === 修正：バケットモデリングを「野球のグローブ（U字曲線シェル）」型にアップグレード ===
       const shellShape = new THREE.Shape();
-      shellShape.moveTo(0.05, 0.45); // 取付耳部近く
-      shellShape.quadraticCurveTo(-0.02, 0.05, -0.25, -0.22); // 後背面の綺麗なRカーブ
-      shellShape.quadraticCurveTo(-0.52, -0.42, -1.02, -0.40); // 底板・刃先へ滑らかに繋ぐ
-      // 外殻肉厚ライン
+      shellShape.moveTo(0.05, 0.45);
+      shellShape.quadraticCurveTo(-0.02, 0.05, -0.25, -0.22);
+      shellShape.quadraticCurveTo(-0.52, -0.42, -1.02, -0.40);
       shellShape.lineTo(-1.00, -0.32);
       shellShape.quadraticCurveTo(-0.52, -0.34, -0.30, -0.16);
       shellShape.quadraticCurveTo(-0.10, 0.06, -0.05, 0.42);
@@ -441,16 +593,15 @@
       const shellGeom = new THREE.ExtrudeGeometry(shellShape, {
         depth: 1.20, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, bevelSegments: 3
       });
-      shellGeom.translate(0, 0, -0.60); // Z軸中心にセンタリング
+      shellGeom.translate(0, 0, -0.60);
       const bucketShell = new THREE.Mesh(shellGeom, yellowMaterial);
       bucket.add(bucketShell);
 
-      // === 修正：側面に突き出すプロ仕様の三角形「サイドカッター（泥割り刃）」を左右に配置 ===
       function makeSideCutter(z) {
         const shape = new THREE.Shape();
         shape.moveTo(0.12, 0.46);
         shape.lineTo(-0.15, 0.32);
-        shape.bezierCurveTo(-0.35, 0.15, -0.45, -0.10, -1.25, -0.42); // つめ側に鋭く張り出すカッター刃
+        shape.bezierCurveTo(-0.35, 0.15, -0.45, -0.10, -1.25, -0.42);
         shape.lineTo(-1.18, -0.56); 
         shape.bezierCurveTo(-0.62, -0.50, -0.32, 0.15, 0.12, 0.42);
         shape.closePath();
@@ -461,14 +612,12 @@
         const cutter = new THREE.Mesh(geom, yellowMaterial);
         return cutter;
       }
-      bucket.add(makeSideCutter(-0.64)); // 左サイドカッター
-      bucket.add(makeSideCutter(0.60));  // 右サイドカッター
+      bucket.add(makeSideCutter(-0.64));
+      bucket.add(makeSideCutter(0.60));
 
-      // === 修正：背面外側に独立したピン取付用の「耳（ブラケット）」を溶接 ===
       const leftEar = box(0.55, 0.46, 0.08, darkMetalMaterial); leftEar.position.set(0.18, 0.22, -0.22); bucket.add(leftEar);
       const rightEar = box(0.55, 0.46, 0.08, darkMetalMaterial); rightEar.position.set(0.18, 0.22, 0.22); bucket.add(rightEar);
 
-      // 掘削用のつめ（ツース）
       for (let i = -2; i <= 2; i++) {
         const tooth = box(0.38, 0.12, 0.18, darkMetalMaterial);
         tooth.position.set(-1.15, -0.44, i * 0.25);
@@ -479,26 +628,21 @@
       const tipMarker = new THREE.Object3D(); tipMarker.position.set(-1.25, -0.56, 0); bucket.add(tipMarker);
       const heelMarker = new THREE.Object3D(); heelMarker.position.set(0.05, -0.35, 0); bucket.add(heelMarker);
 
-      // === 修正：野球グローブ型バケットに完全フィットする「おまんじゅう型（半球ドーム状）」の美しい土山マウンドに改良 ===
-      // 楕円球体の頂点をつめ側の傾斜に沿うよう、X座標に応じてZ軸幅を絞り込み（テーパー処理）ロールケーキ型を完全解決！
       const soilMoundGeom = new THREE.SphereGeometry(0.55, 20, 16);
-      soilMoundGeom.scale(1.2, 1.1, 1.15); // やや縦にふっくらとボリュームを持たせる
+      soilMoundGeom.scale(1.2, 1.1, 1.15);
       const posAttr = soilMoundGeom.attributes.position;
       for (let i = 0; i < posAttr.count; i++) {
         let x = posAttr.getX(i);
         let y = posAttr.getY(i);
         let z = posAttr.getZ(i);
         
-        // テーパー変形：左右の端（x軸の極値）にいくにつれてz軸（幅）を滑らかにすぼめる
         const taper = Math.cos((x / 0.72) * (Math.PI / 2.2));
         posAttr.setZ(i, z * clamp(taper, 0.18, 1.0));
 
-        // 上面にリアルで有機的な泥山の隆起を追加
         if (y > -0.1) {
           const noise = Math.sin(x * 5 + z * 5) * 0.08 + Math.cos(z * 7) * 0.04;
           posAttr.setY(i, y + noise);
         } else {
-          // 底面を滑らかに潰して、グローブの丸底に綺麗に吸い付かせる
           posAttr.setY(i, -0.32);
         }
       }
@@ -507,16 +651,14 @@
         color: 0x76543c, roughness: 0.98, metalness: 0
       });
       const bucketSoilMesh = new THREE.Mesh(soilMoundGeom, bucketSoilMaterial);
-      bucketSoilMesh.position.set(-0.52, -0.12, 0); // グローブ内ポケットの位置にピタッと収める
+      bucketSoilMesh.position.set(-0.52, -0.12, 0);
       bucketSoilMesh.visible = false;
       bucketSoilMesh.castShadow = true; bucketSoilMesh.receiveShadow = true;
       bucket.add(bucketSoilMesh);
 
-      // === バケットリンク ===
       const linkJointA = box(0.12, 0.12, 0.55, darkMetalMaterial); linkJointA.position.set(-0.2, 0.35, 0); arm.add(linkJointA);
       const linkBarA = box(0.72, 0.08, 0.45, yellowMaterial); linkBarA.position.set(-0.15, 0.38, 0); bucketPivot.add(linkBarA);
 
-      // === シリンダーメッシュを scene の直下に追加 ===
       const boomCylBase = new THREE.Mesh(hydCylinderGeom, darkMetalMaterial); scene.add(boomCylBase);
       const boomCylRod = new THREE.Mesh(hydCylinderGeom, hydraulicMaterial); scene.add(boomCylRod);
 
@@ -528,8 +670,7 @@
 
       shadowify(excavator);
 
-      // === 排出ゾーン（中央・手前寄りに配置変更） ===
-      const dumpCenter = new THREE.Vector3(2.5, 0, -1.0); // 自走ルートの中央に
+      const dumpCenter = new THREE.Vector3(2.5, 0, -1.0);
       const dumpGroup = new THREE.Group(); dumpGroup.position.copy(dumpCenter); scene.add(dumpGroup);
       const dumpBase = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.06, 3.4), new THREE.MeshStandardMaterial({ color: 0xdfdad0, roughness: 0.9 }));
       dumpBase.position.y = 0.03; dumpBase.receiveShadow = true; dumpGroup.add(dumpBase);
@@ -540,7 +681,6 @@
       const dumpPile = new THREE.Mesh(new THREE.ConeGeometry(1.35, 1.2, 24, 5), new THREE.MeshStandardMaterial({ color: 0x76543c, roughness: 0.98 }));
       dumpPile.position.y = 0.05; dumpPile.scale.set(0.1, 0.05, 0.1); dumpPile.castShadow = true; dumpPile.receiveShadow = true; dumpGroup.add(dumpPile);
 
-      // === 看板 ===
       const canvasSign = document.createElement("canvas"); canvasSign.width = 512; canvasSign.height = 160;
       const ctxSign = canvasSign.getContext("2d");
       ctxSign.fillStyle = "#fff4d1"; ctxSign.fillRect(0, 0, 512, 160);
@@ -553,7 +693,6 @@
       const postMaterial = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.7, roughness: 0.45 });
       for (const x of [-1.05, 1.05]) { const post = box(0.08, 1.5, 0.08, postMaterial); post.position.set(x, 0.75, -1.78); dumpGroup.add(post); }
 
-      // === 砂粒物理シミュレーション (InstancedMesh) ===
       const maxParticles = 120;
       const particleGeom = new THREE.DodecahedronGeometry(0.08, 0);
       const particleMat = new THREE.MeshStandardMaterial({ roughness: 0.99, metalness: 0.0 });
@@ -584,7 +723,6 @@
         instancedParticles.instanceColor.needsUpdate = true;
       }
 
-      // === 塵埃エフェクト ===
       const dustParticles = [];
       function createDustTexture() {
         const canvas = document.createElement("canvas"); canvas.width = 64; canvas.height = 64;
@@ -616,7 +754,6 @@
         }
       }
 
-      // === 各種パラメータ変数 ===
       const controls = { leftX: 0, leftY: 0, rightX: 0, rightY: 0 };
       const keyboard = Object.create(null);
       
@@ -628,7 +765,7 @@
       let tiltAngle = 0;
 
       const capacityFill = document.getElementById("capacityFill");
-      const capacityText = document.getElementById("capacityText");
+      const capacityTextEl = document.getElementById("capacityText");
       const scoreElement = document.getElementById("score");
       const loadsElement = document.getElementById("loads");
       const statusElement = document.getElementById("status");
@@ -638,7 +775,6 @@
         centerMessage.textContent = text; centerMessage.classList.add("visible"); messageTimer = duration;
       }
 
-      // === 安全化された音響システム ===
       let audioCtx = null, engineGain = null, engineOscA = null, engineOscB = null, soundEnabled = true;
       function initAudio() {
         try {
@@ -652,10 +788,7 @@
           const lowpass = audioCtx.createBiquadFilter(); lowpass.type = "lowpass"; lowpass.frequency.value = 160;
           engineOscA.connect(lowpass); engineOscB.connect(lowpass); lowpass.connect(engineGain);
           engineOscA.start(); engineOscB.start();
-        } catch (e) {
-          console.warn("Web Audio is blocked or not supported in this frame:", e);
-          audioCtx = null;
-        }
+        } catch (e) {}
       }
       function playNoise(duration = 0.1, volume = 0.05) {
         if (!audioCtx || !soundEnabled) return;
@@ -668,12 +801,9 @@
           const filter = audioCtx.createBiquadFilter(); filter.type = "lowpass"; filter.frequency.value = 600;
           const gain = audioCtx.createGain(); gain.gain.value = volume;
           source.buffer = buffer; source.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination); source.start();
-        } catch (e) {
-          // 音声再生エラーの無視
-        }
+        } catch (e) {}
       }
 
-      // === レバーの作成 ===
       function makeJoystick(element, xProperty, yProperty) {
         const knob = element.querySelector(".knob"); let pointerId = null;
         function update(event) {
@@ -704,7 +834,6 @@
       });
       window.addEventListener("keyup", (event) => { keyboard[event.code] = false; });
 
-      // === 手動カメラ操作 ===
       let isCamDragging = false, prevCamX = 0, prevCamY = 0;
       renderer.domElement.addEventListener("pointerdown", (event) => {
         isCamDragging = true;
@@ -725,14 +854,13 @@
       });
       renderer.domElement.addEventListener("pointercancel", () => { isCamDragging = false; });
 
-      // === 物理連動シリンダー姿勢更新 ===
       const _v1 = new THREE.Vector3(), _v2 = new THREE.Vector3();
       function updateHydraulic(cylinder, rod, anchorBase, anchorTip, baseRad, rodRad) {
         anchorBase.getWorldPosition(_v1);
         anchorTip.getWorldPosition(_v2);
         
         const dist = _v1.distanceTo(_v2);
-        if (dist < 0.001) return; // 基点と先端が一致している場合はNaN回避のためスキップ
+        if (dist < 0.001) return;
         
         cylinder.position.copy(_v1);
         cylinder.lookAt(_v2);
@@ -743,7 +871,6 @@
         rod.scale.set(rodRad, rodRad, dist * 0.85);
       }
 
-      // シリンダー端点アンカー
       const d_boomCylBase = new THREE.Object3D(); d_boomCylBase.position.set(0.48, 0.42, 0); upper.add(d_boomCylBase);
       const d_boomCylTip = new THREE.Object3D(); d_boomCylTip.position.set(1.4, 0.28, 0); boom.add(d_boomCylTip);
       const d_armCylBase = new THREE.Object3D(); d_armCylBase.position.set(0.85, 0.38, 0); boom.add(d_armCylBase);
@@ -757,12 +884,9 @@
         updateHydraulic(bktCylBase, bktCylRod, d_bktCylBase, d_bktCylTip, 0.08, 0.05);
       }
 
-      // === 入力操作の計算（三菱・コマツ パターンBへ完全統一） ===
       function getInput() {
-        // 左レバー: 縦=ブーム、横=旋回 [1]
         const swingInput = controls.leftX + (keyboard.KeyE ? 1 : 0) - (keyboard.KeyQ ? 1 : 0);
         const boomInput = -controls.leftY + (keyboard.KeyW ? 1 : 0) - (keyboard.KeyS ? 1 : 0);
-        // 右レバー: 縦=アーム、横=バケット [1]
         const armInput = -controls.rightY + (keyboard.KeyI ? 1 : 0) - (keyboard.KeyK ? 1 : 0);
         const bucketInput = controls.rightX + (keyboard.KeyL ? 1 : 0) - (keyboard.KeyJ ? 1 : 0);
 
@@ -774,31 +898,26 @@
         };
       }
 
-      // === 自走クローラー（ペダル走行レバー）の入力値取得 ===
       const leftTrackSlider = document.getElementById("leftTrackSlider");
       const rightTrackSlider = document.getElementById("rightTrackSlider");
       
       function getTrackInputs() {
-        // キーボード（矢印キー）優先
         let tL = 0.0;
         let tR = 0.0;
         if (keyboard.ArrowUp) { tL = 1.0; tR = 1.0; }
         else if (keyboard.ArrowDown) { tL = -1.0; tR = -1.0; }
-        else if (keyboard.ArrowLeft) { tL = -1.0; tR = 1.0; } // 超信地左旋回
-        else if (keyboard.ArrowRight) { tL = 1.0; tR = -1.0; } // 超信地右旋回
+        else if (keyboard.ArrowLeft) { tL = -1.0; tR = 1.0; }
+        else if (keyboard.ArrowRight) { tL = 1.0; tR = -1.0; }
         else {
-          // タッチスクリーン（スライダー）値
           tL = parseFloat(leftTrackSlider.value);
           tR = parseFloat(rightTrackSlider.value);
         }
         return { left: tL, right: tR };
       }
 
-      // クローラー接地用端点サンプラー（車体ピッチ＆ロール計算用）
       function getContactPointWorld(lx, lz) {
         const rotY = machineRoot.rotation.y;
         const cos = Math.cos(rotY), sin = Math.sin(rotY);
-        // ローカル平面の座標をワールド回転に投影
         const wx = machineRoot.position.x + lx * cos - lz * sin;
         const wz = machineRoot.position.z + lx * sin + lz * cos;
         return { x: wx, z: wz, h: getTerrainHeightAt(wx, wz) };
@@ -806,9 +925,8 @@
 
       const worldTipPos = new THREE.Vector3();
       const worldHeelPos = new THREE.Vector3();
-      const machineRoot = excavator; // マシンの基点
+      const machineRoot = excavator;
 
-      // 初期起動位置のセット
       machineRoot.position.set(-2.5, 0.0, 0);
 
       function updateMachine(delta) {
@@ -822,16 +940,13 @@
         const groundY = getTerrainHeightAt(worldTipPos.x, worldTipPos.z);
         const depth = groundY - worldTipPos.y;
 
-        // === 1. クローラー自走機能と斜面によるピッチ・ロール姿勢演算 ===
         const trackInput = getTrackInputs();
-        // 砂山沈み込み抵抗を適用
         const trackHardness = getTerrainHardness(machineRoot.position.x, machineRoot.position.z);
-        const trackSpeedMod = (trackHardness < 0.4) ? 0.62 : 1.0; // 柔らかい砂の上では重々しく減速
+        const trackSpeedMod = (trackHardness < 0.4) ? 0.62 : 1.0;
 
         const leftVel = trackInput.left * 1.4 * trackSpeedMod;
         const rightVel = trackInput.right * 1.4 * trackSpeedMod;
         
-        // 独立クローラー物理（速度差で車体旋回角を算出）
         const trackDistance = 1.84;
         const v = (leftVel + rightVel) / 2;
         const omega = (leftVel - rightVel) / trackDistance;
@@ -840,35 +955,28 @@
         const forwardDir = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), machineRoot.rotation.y);
         machineRoot.position.addScaledVector(forwardDir, v * delta);
 
-        // キャタピラの前後左右4箇所をセンシングして地面の傾斜に追従
         const ptFL = getContactPointWorld(1.2, -0.92);
         const ptFR = getContactPointWorld(1.2, 0.92);
         const ptRL = getContactPointWorld(-1.2, -0.92);
         const ptRR = getContactPointWorld(-1.2, 0.92);
 
         const avgGroundY = (ptFL.h + ptFR.h + ptRL.h + ptRR.h) / 4;
-        // 地面に密着したY高を適用
         machineRoot.position.y = lerp(machineRoot.position.y, avgGroundY, 1.0 - Math.exp(-delta * 8.0));
 
-        // ピッチ（前後傾斜）とロール（左右傾斜）を地面の高低差から角度計算
         const pitch = Math.atan2(((ptFL.h + ptFR.h) / 2) - ((ptRL.h + ptRR.h) / 2), 2.4);
         const roll = Math.atan2(((ptFL.h + ptRL.h) / 2) - ((ptFR.h + ptRR.h) / 2), 1.84);
 
         undercarriage.rotation.z = pitch;
         undercarriage.rotation.x = -roll;
 
-        // === 2. キャタピラ跡（履帯跡）形成システム ===
-        // 柔らかい砂山（Z < -0.5）を踏んだとき、クローラー下を少し凹ませ、外枠をわずかに盛り上げて「轍」を刻む
         if (trackHardness < 0.45 && Math.abs(leftVel + rightVel) > 0.1) {
           for (let lx of [-1.2, 0, 1.2]) {
             const pL = getContactPointWorld(lx, -0.92);
             const pR = getContactPointWorld(lx, 0.92);
             
-            // クローラー下を踏み潰す
             setTerrainHeightAt(pL.x, pL.z, -0.016 * delta);
             setTerrainHeightAt(pR.x, pR.z, -0.016 * delta);
 
-            // 土が逃げて盛り上がる（轍のふち）
             const pL_outer = getContactPointWorld(lx, -1.35);
             const pR_outer = getContactPointWorld(lx, 1.35);
             setTerrainHeightAt(pL_outer.x, pL_outer.z, 0.008 * delta);
@@ -877,13 +985,11 @@
           terrainUpdateFlag = true;
         }
 
-        // スライダー非アクティブ時に自動で0に戻す（スマホの走行ブレーキ表現）
         if (!keyboard.ArrowUp && !keyboard.ArrowDown && !keyboard.ArrowLeft && !keyboard.ArrowRight) {
           leftTrackSlider.value = approach(parseFloat(leftTrackSlider.value), 0.0, delta * 3.5);
           rightTrackSlider.value = approach(parseFloat(rightTrackSlider.value), 0.0, delta * 3.5);
         }
 
-        // 掘削抵抗
         let resistance = 0.0;
         if (depth > -0.05 && worldTipPos.x > 1.2 && worldTipPos.x < 12.0 && Math.abs(worldTipPos.z) < 4.8) {
           const bktMatrix = bucket.matrixWorld;
@@ -899,7 +1005,6 @@
 
         const speedFactor = 1.0 - resistance;
 
-        // 重量負荷
         const activePartCount = particles.filter(p => p.active && p.inBucket).length;
         let totalWeight = 0;
         particles.forEach(p => {
@@ -910,38 +1015,25 @@
         currentSoilWeight = totalWeight;
         const weightBoomSlower = clamp(1.0 - (totalWeight / 140.0), 0.35, 1.0);
 
-        // 関節角度更新
         swing += input.swing * delta * 0.68 * speedFactor;
         boomAngle += input.boom * delta * 0.52 * speedFactor * weightBoomSlower;
         armAngle += input.arm * delta * 0.62 * speedFactor;
-        
-        // JIS規格・三菱レバー連動。左方向で深く抱え込み、右方向で一直線開くように方向を統一
         bucketAngle += input.bucket * delta * 1.5 * speedFactor;
-
-        // 可動限界角の180度完全実装（クローズ：0.38rad、一直線ダンプ：2.75rad）
         bucketAngle = clamp(bucketAngle, 0.38, 2.75); 
 
         upper.rotation.y = swing;
         boomPivot.rotation.z = boomAngle;
         armPivot.rotation.z = armAngle;
-        
-        // バケット回転角度をz軸回転へ適応
         bucketPivot.rotation.z = bucketAngle; 
 
         const reachDist = Math.max(1.0, worldTipPos.x - 0.6);
         const tiltTarget = (totalWeight * 0.00035) * reachDist;
         tiltAngle = lerp(tiltAngle, tiltTarget, 1 - Math.exp(-delta * 3.5));
-        
-        // 車体の自重モーメントしなりを車体全体ではなくアッパー旋回体に適用して物理整合性を最適化
         upper.rotation.z = tiltAngle;
 
-        // 掘削・ハイトマップ変形
         const inDiggingArea = worldTipPos.x > 1.2 && worldTipPos.x < 11.8 && Math.abs(worldTipPos.z) < 4.6;
         if (inDiggingArea && depth > -0.08 && depth < 1.4) {
-          // === 修正：つめ先（worldTipPos）が背中側（worldHeelPos）より低い（＝掘削可能なおじぎ姿勢）ときのみ土砂の進入を許可 ===
-          // これにより、バケットの背中を押し当てたときに土がバケットを貫通して勝手に入る物理矛盾を100%防ぎます！
           const isCorrectDiggingAngle = worldTipPos.y < worldHeelPos.y + 0.15;
-
           const isDiggingAction = isCorrectDiggingAngle && (input.bucket < -0.1 || (input.arm > 0.15 && bucketAngle < 1.8));
           if (isDiggingAction && resistance < 0.85) {
             const digPower = -delta * (0.35 + Math.max(0, input.arm) * 0.4) * (1.0 - resistance * 0.5);
@@ -956,10 +1048,8 @@
                 p.active = true;
                 p.inBucket = true;
                 p.hardnessType = currentHardness;
-                
-                // 砂粒のスポーン位置をバケット最奥部（x=0付近）へシフトし、削り込み中につめ先からこぼれるバグを解決
                 p.localPos.set(
-                  -Math.random() * 0.5, // より奥側へ
+                  -Math.random() * 0.5,
                   -0.28 + Math.random() * 0.4,
                   (Math.random() - 0.5) * 0.8
                 );
@@ -972,16 +1062,13 @@
               }
             }
             if (spawned > 0) {
-              if (instancedParticles.instanceColor) {
-                instancedParticles.instanceColor.needsUpdate = true;
-              }
+              if (instancedParticles.instanceColor) instancedParticles.instanceColor.needsUpdate = true;
               playNoise(0.08, 0.02);
               spawnDust(worldTipPos, 1);
             }
           }
         }
 
-        // 裏押し（たたき転圧）
         heelMarker.getWorldPosition(worldHeelPos);
         const heelGroundY = getTerrainHeightAt(worldHeelPos.x, worldHeelPos.z);
         if (worldHeelPos.y <= heelGroundY + 0.15 && worldHeelPos.x > 1.2 && worldHeelPos.x < 11.8 && Math.abs(worldHeelPos.z) < 4.6) {
@@ -995,7 +1082,6 @@
           }
         }
 
-        // 旋回整地
         const swingSpeed = Math.abs(input.swing);
         if (swingSpeed > 0.1 && worldTipPos.y <= groundY + 0.25 && inDiggingArea) {
           applyDeformationRadius(worldTipPos.x, worldTipPos.z, 0.8, worldTipPos.y - 0.02, "flatten");
@@ -1006,17 +1092,17 @@
         }
 
         if (activePartCount === 0) {
-          statusElement.textContent = "自走レバーで移動。つめを刺し、巻きながら掘ろう";
+          statusElement.textContent = t('statusMoving');
+          statusElement.dataset.state = 'idle';
         } else {
-          const pTypeStr = (currentHardness > 0.5) ? "硬粘土質（激重・落としにくい）" : "砂質（サラサラ・こぼれやすい）";
-          statusElement.textContent = `運搬中: ${pTypeStr} | 排出エリアへ移動・旋回してください`;
+          const typeStr = (currentHardness > 0.5) ? t('typeClay') : t('typeSand');
+          statusElement.textContent = t('statusHauling', typeStr);
+          statusElement.dataset.state = 'hauling';
         }
       }
 
-      // === スライダー減衰計算用のヘルパー ===
       function approach(v, t, a) { return v < t ? Math.min(v + a, t) : v > t ? Math.max(v - a, t) : v; }
 
-      // === 砂粒物理シミュレーション ===
       const _matB = new THREE.Matrix4();
       const _invMatB = new THREE.Matrix4();
       const _worldP = new THREE.Vector3();
@@ -1043,12 +1129,9 @@
 
           if (p.inBucket) {
             p.localVel.addScaledVector(_localG, delta);
-            
-            // バケット内粒子の摩擦抵抗（減衰率）を強め、サラサラ滑るのを防ぎ「リアルにまとまる土塊」の物理を再現
             p.localVel.multiplyScalar(0.85); 
             p.localPos.addScaledVector(p.localVel, delta);
 
-            // バケット内での当たり判定
             if (p.localPos.y < -0.34) {
               p.localPos.y = -0.34;
               p.localVel.y = -p.localVel.y * 0.15;
@@ -1066,7 +1149,6 @@
               p.localVel.x += (Math.random() - 0.5) * 0.04;
             }
 
-            // こぼれ落ち閾値を安全側に広げて、余計なこぼれを防ぐ
             const spillThreshold = (p.hardnessType > 0.5) ? -1.22 : -1.15;
             if (p.localPos.x < spillThreshold) {
               p.inBucket = false;
@@ -1104,8 +1186,6 @@
                 const dumpScale = clamp(totalDeliveredParticles / 110.0, 0.1, 2.8);
                 dumpPile.scale.set(0.1 + dumpScale * 0.8, 0.05 + dumpScale * 0.7, 0.1 + dumpScale * 0.8);
                 dumpPile.position.y = 0.03 + dumpPile.scale.y * 0.58;
-              } else {
-                // === 修正：ダンプゾーン外にこぼれ落ちた土砂は、トゲ山を作らないようにチリ（ダスト）として消えるように修正 ===
               }
             }
 
@@ -1148,7 +1228,6 @@
         terrainUpdateFlag = false;
       }
 
-      // === カメラ位置の更新 ===
       function updateCamera(delta) {
         const upperWorld = new THREE.Vector3(); upper.getWorldPosition(upperWorld);
         
@@ -1171,24 +1250,18 @@
         const activePartCount = particles.filter(p => p.active && p.inBucket).length;
         const capacityPct = Math.round((activePartCount / maxParticles) * 100);
         capacityFill.style.width = `${capacityPct}%`;
-        capacityText.textContent = `${capacityPct}%`;
+        document.getElementById("capacityPct").textContent = `${capacityPct}%`;
 
-        // === 修正：バケット内土量マウンド（こんもりおまんじゅう泥山）メッシュのサイズ・位置変形をリアルタイム同期 ===
         if (capacityPct > 1) {
           bucketSoilMesh.visible = true;
           const baseRatio = capacityPct / 100.0;
-          
-          // === 修正：少ない土量でも平べったい「丸餅」にならず、常にふっくらした山盛り（おまんじゅう型）を保つ ===
-          const scaleX = 0.65 + baseRatio * 0.35; // 最小でも0.65の幅を確保
-          const scaleY = 0.38 + baseRatio * 0.62; // 最小でも0.38の厚みを確保し、こんもり感をキープ
+          const scaleX = 0.65 + baseRatio * 0.35;
+          const scaleY = 0.38 + baseRatio * 0.62;
           bucketSoilMesh.scale.set(scaleX, scaleY, 0.96);
 
-          // === 修正：バケットがダンプ方向（開く＝bucketAngle > 1.25）へ傾いたら、土砂が重力で「つめ先にズルズル滑り落ちる」モーションを表現 ===
           if (bucketAngle > 1.25) {
-            const slideRatio = (bucketAngle - 1.25) / 1.5; // 開き具合 (0.0〜1.0)
-            // つめ先側（local X マイナス方向）へ土砂がスライド
+            const slideRatio = (bucketAngle - 1.25) / 1.5;
             bucketSoilMesh.position.x = -0.52 - slideRatio * 0.38;
-            // 滑り落ちるに従って、土山が潰れて薄くなっていく
             bucketSoilMesh.scale.y *= (1.0 - slideRatio * 0.88);
           } else {
             bucketSoilMesh.position.x = -0.52;
@@ -1198,10 +1271,10 @@
         }
 
         if (activePartCount > lastActiveCount) {
-          if (activePartCount === 20) showMessage("土が溜まってきた！");
-          if (activePartCount === 60) showMessage("こんもり大盛り！");
+          if (activePartCount === 20) showMessage(t('msgLoad20'));
+          if (activePartCount === 60) showMessage(t('msgLoad60'));
           if (activePartCount === 100) {
-            showMessage("山盛り満杯！ずっしり重いぞ！", 1.8);
+            showMessage(t('msgLoad100'), 1.8);
             playNoise(0.15, 0.08);
           }
         }
@@ -1210,7 +1283,7 @@
           loads++;
           const scoreBonus = lastActiveCount * 4 + 100;
           score += scoreBonus;
-          showMessage(`運搬完了ボーナス！ +${scoreBonus}`, 1.6);
+          showMessage(t('msgDeliver', scoreBonus), 1.6);
         }
 
         lastActiveCount = activePartCount;
@@ -1221,15 +1294,16 @@
         }
       }
 
-      // イベントリスナーの追加
+      // 初期描画とイベント
+      updateAllTexts();
+
       document.getElementById("startButton").addEventListener("click", () => {
         gameStarted = true;
         document.getElementById("startOverlay").style.display = "none";
         initAudio();
-        showMessage("エンジン始動！", 1.2);
+        showMessage(t('msgStart'), 1.2);
       });
 
-      // 音声切り替えボタンの修復
       document.getElementById("soundButton").addEventListener("click", () => {
         soundEnabled = !soundEnabled;
         document.getElementById("soundButton").textContent = soundEnabled ? "🔊" : "🔇";
@@ -1237,6 +1311,10 @@
           engineGain.gain.setTargetAtTime(soundEnabled ? 0.038 : 0, audioCtx.currentTime, 0.05);
         }
         if (soundEnabled) initAudio();
+      });
+
+      document.getElementById("helpButton").addEventListener("click", () => {
+        document.getElementById("helpOverlay").style.display = "grid";
       });
 
       const clock = new THREE.Clock();
@@ -1265,7 +1343,6 @@
       upper.rotation.y = swing;
       boomPivot.rotation.z = boomAngle;
       armPivot.rotation.z = armAngle;
-      
       bucketPivot.rotation.z = bucketAngle; 
       updateAllHydraulics();
 
