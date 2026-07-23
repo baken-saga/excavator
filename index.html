@@ -147,8 +147,14 @@
     @media (pointer: fine) and (min-width: 900px) {
       #controls { opacity: 0.90; }
     }
+    /* スマホ用：HUD透過 */
     @media (max-width: 600px) {
-      #hud { width: calc(100vw - 126px); padding: 9px 11px; }
+      #hud {
+        width: calc(100vw - 126px);
+        padding: 9px 11px;
+        opacity: 0.45;
+        transition: opacity 0.2s;
+      }
       #gameTitle { font-size: 11px; }
       #score { font-size: 18px; }
       #mission { display: none; }
@@ -320,16 +326,13 @@
         document.getElementById('leftTrackLabel').textContent = t('leftTrack');
         document.getElementById('rightTrackLabel').textContent = t('rightTrack');
 
-        // overlays
         renderStartOverlay();
         renderHelpOverlay();
 
-        // dynamic status if not hauling
         const statusEl = document.getElementById('status');
         if (statusEl.dataset.state !== 'hauling') {
           statusEl.textContent = t('statusMoving');
         }
-        // language button
         document.getElementById('langButton').textContent = currentLang === 'ja' ? '🌐 JA' : '🌐 EN';
       }
 
@@ -373,7 +376,6 @@
       document.getElementById('langButton').addEventListener('click', () => {
         currentLang = currentLang === 'ja' ? 'en' : 'ja';
         updateAllTexts();
-        // re-bind help button because the overlay was rebuilt
         document.getElementById('helpButton').onclick = () => {
           document.getElementById('helpOverlay').style.display = 'grid';
         };
@@ -382,7 +384,7 @@
         };
       });
 
-      // ---------- 以下、元のコードを一切変更せず、必要な部分のみ t() で置き換え ----------
+      // ---------- 3D & 物理 ----------
       const clamp = THREE.MathUtils.clamp;
       const lerp = THREE.MathUtils.lerp;
       const scene = new THREE.Scene();
@@ -392,7 +394,13 @@
       
       let camYaw = 2.4; 
       let camPitch = 0.42;
-      const camDist = 11.2;
+      let camDist = 11.2;
+
+      // 縦画面ならカメラを遠くに
+      function updateCamDistByOrientation() {
+        const aspect = window.innerWidth / window.innerHeight;
+        camDist = aspect < 1 ? 16.5 : 11.2;
+      }
 
       const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.8));
@@ -900,6 +908,11 @@
 
       const leftTrackSlider = document.getElementById("leftTrackSlider");
       const rightTrackSlider = document.getElementById("rightTrackSlider");
+
+      // ★ 走行レバー操作中はカメラ回転をブロック
+      document.getElementById('trackControls').addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+      });
       
       function getTrackInputs() {
         let tL = 0.0;
@@ -1229,6 +1242,7 @@
       }
 
       function updateCamera(delta) {
+        updateCamDistByOrientation();
         const upperWorld = new THREE.Vector3(); upper.getWorldPosition(upperWorld);
         
         const targetX = upperWorld.x;
@@ -1294,7 +1308,6 @@
         }
       }
 
-      // 初期描画とイベント
       updateAllTexts();
 
       document.getElementById("startButton").addEventListener("click", () => {
@@ -1334,6 +1347,7 @@
       }
 
       window.addEventListener("resize", () => {
+        updateCamDistByOrientation();
         camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.8)); renderer.setSize(window.innerWidth, window.innerHeight);
       });
